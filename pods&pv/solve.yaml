@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-dep
+  namespace: default
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      myapp: demo
+  template:
+    metadata:
+      name: tem-demo
+      labels:
+        myapp: demo
+    spec:
+      containers:
+      - name: tomcat
+        image: tomcat:8.0
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: TZ
+          value: "Asia/Shanghai"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        volumeMounts:
+        - name: volume-demo
+          mountPath: /usr/local/tomcat/logs
+          subPathExpr: $(POD_NAME)
+        ports:
+        - name: tomcat
+          containerPort: 8080
+      volumes:
+      - name: volume-demo
+        persistentVolumeClaim:
+          claimName: pvc-demo
