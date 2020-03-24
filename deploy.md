@@ -184,9 +184,9 @@ kubeadm init --config=kubeadm-config.yaml --upload-certs
 kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 ########主节点加入命令
 kubeadm join 172.19.0.252:6443 --token 5p8dfi.beigq7g6t8bvumpc \
-    --discovery-token-ca-cert-hash sha256:7d0be2ebb4e0e007a10ee6d799d40c361449252928ca79101116a7aa08131db1 \
-    --control-plane --certificate-key 1c71c4622a77c9fb1046678fa268ca3119e54392488bb8303c49cbd8f8c3c66c
+    --discovery-token-ca-cert-hash sha256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx \
+    --control-plane --certificate-key xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ########从节点加入命令
 kubeadm join 172.19.0.252:6443 --token 5p8dfi.beigq7g6t8bvumpc \
-    --discovery-token-ca-cert-hash sha256:7d0be2ebb4e0e007a10ee6d799d40c361449252928ca79101116a7aa08131db1
+    --discovery-token-ca-cert-hash sha256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
