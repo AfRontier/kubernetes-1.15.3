@@ -1,0 +1,133 @@
+nodes:
+  - address: 192.168.1.92
+    port: "22" # ssh 端口
+    internal_address: "" # 内网IP，如果是公有云的这种有公私网两个IP的，则address配置为公网IP
+    role:
+      - controlplane  # 控制节点角色，等于k8s的master
+      - etcd
+      - worker
+    user: rancher # 服务器登陆账户
+    hostname_override: master-etcd-01
+    docker_socket: /var/run/docker.sock  # docker sock所在路径，如果是用snap安装的dockers需要自行修改
+    ssh_key_path: /home/rancher/.ssh/id_rsa  # ssh key的路径，必须是免密登录，不能使用账户密码
+    labels: {} # 标签说明
+  - address: 192.168.1.93
+    port: "22"
+    internal_address: ""
+    role:
+      - controlplane
+      - etcd
+      - worker
+    user: rancher
+    hostname_override: master-etcd-02
+    docker_socket: /var/run/docker.sock
+    ssh_key_path: /home/rancher/.ssh/id_rsa
+  - address: 192.168.1.94
+    port: "22"
+    internal_address: ""
+    role:
+      - controlplane
+      - etcd
+      - worker
+    user: rancher
+    hostname_override: master-etcd-03
+    docker_socket: /var/run/docker.sock
+    ssh_key_path: /home/rancher/.ssh/id_rsa
+  - address: 192.168.1.95
+    port: "22"
+    internal_address: ""
+    role:
+      - worker
+    user: rancher
+    hostname_override: worker-1
+    docker_socket: /var/run/docker.sock
+    ssh_key_path: /home/rancher/.ssh/id_rsa
+    labels:
+      app: ingress  # 标记后只有该标记节点会部署ingress
+services:
+# ETCD相关配置，另外备份是可以备份到s3的，这个配置见官方文档
+  etcd:
+    extra_args:
+      auto-compaction-retention: 240 #(单位小时)
+      # 修改空间配额为$((6*1024*1024*1024))，默认2G,最大8G
+      quota-backend-bytes: "6442450944"
+    backup_config:
+      enabled: true
+      interval_hours: 12
+    service_cluster_ip_range: 10.43.0.0/16
+    service_node_port_range: "20000-40000"
+    pod_security_policy: false
+    always_pull_images: false
+# 控制器的一些配置，比如节点判断失联后多久开始迁移等
+  kube-controller:
+    extra_args:
+      ## 当节点通信失败后，再等一段时间kubernetes判定节点为notready状态。
+      ## 这个时间段必须是kubelet的nodeStatusUpdateFrequency(默认10s)的整数倍，
+      ## 其中N表示允许kubelet同步节点状态的重试次数，默认40s。
+      node-monitor-grace-period: "20s"
+      ## 再持续通信失败一段时间后，kubernetes判定节点为unhealthy状态，默认1m0s。
+      node-startup-grace-period: "30s"
+      ## 再持续失联一段时间，kubernetes开始迁移失联节点的Pod，默认5m0s。
+      pod-eviction-timeout: "1m"
+    cluster_cidr: 10.42.0.0/16
+    service_cluster_ip_range: 10.43.0.0/16
+# 集群的一些配置，包括资源预留，集群名字，dns等配置
+  kubelet:
+    extra_args:
+      serialize-image-pulls: "false"
+      registry-burst: "10"
+      registry-qps: "0"
+      # # 节点资源预留
+      # enforce-node-allocatable: 'pods'
+      # system-reserved: 'cpu=0.5,memory=500Mi'
+      # kube-reserved: 'cpu=0.5,memory=1500Mi'
+      # # POD驱逐，这个参数只支持内存和磁盘。
+      # ## 硬驱逐伐值
+      # ### 当节点上的可用资源降至保留值以下时，就会触发强制驱逐。强制驱逐会强制kill掉POD，不会等POD自动退出。
+      # eviction-hard: 'memory.available<300Mi,nodefs.available<10%,imagefs.available<15%,nodefs.inodesFree<5%'
+      # ## 软驱逐伐值
+      # ### 以下四个参数配套使用，当节点上的可用资源少于这个值时但大于硬驱逐伐值时候，会等待eviction-soft-grace-period设置的时长；
+      # ### 在eviction-max-pod-grace-period时长之后，如果POD还未退出则发送强制kill POD"
+      # eviction-soft: 'memory.available<500Mi,nodefs.available<50%,imagefs.available<50%,nodefs.inodesFree<10%'
+      # eviction-soft-grace-period: 'memory.available=1m30s'
+      # eviction-max-pod-grace-period: '30'
+      # eviction-pressure-transition-period: '30s'
+    cluster_domain: cluster.local
+    infra_container_image: ""
+    cluster_dns_server: 10.43.0.10
+    fail_swap_on: false
+  kubeproxy:
+    extra_args:
+      # 默认使用iptables进行数据转发，如果要启用ipvs，则此处设置为`ipvs`
+      proxy-mode: "iptables"
+# 配置集群的CNI网络模型
+network:
+  plugin: canal
+  options:
+    flannel_backend_type: "vxlan"
+ssh_key_path: /home/rancher/.ssh/id_rsa
+ssh_agent_auth: false
+authorization:
+  mode: rbac
+ignore_docker_version: false
+# k8s的版本，可以通过rke config --system-images --all 命令列出所有rke支持的版本
+kubernetes_version: v1.15.6-rancher1-2
+# 国内使用阿里云的镜像
+private_registries:
+  - url: registry.cn-shanghai.aliyuncs.com
+    user:
+    password:
+    is_default: true
+# 配置ingress，目前RKE支持nginx。
+ingress:
+  provider: "nginx"
+  # 节点选择，和上面node配置结合的
+  node_selector:
+    app: ingress
+  options:
+    use-forwarded-headers: "true"
+cluster_name: rancher
+addon_job_timeout: 0
+restore:
+  restore: false
+  snapshot_name: ""
