@@ -27,3 +27,7 @@ spec:
         ports:
         - name: http
           containerPort: 80
+      volumes:
+      - name: volume-demo
+        persistentVolumeClaim:
+          claimName: pvc-demo
