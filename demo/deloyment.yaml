@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-dep
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      myapp: demo
+  template:
+    metadata:
+      name: tem-demo
+      labels:
+        myapp: demo
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.15.2
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: TZ
+          value: "Asia/Shanghai"
+        volumeMounts:
+        - name: volume-demo
+          mountPath: /usr/share/nginx/html
+        ports:
+        - name: http
+          containerPort: 80
