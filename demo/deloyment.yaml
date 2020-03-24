@@ -18,6 +18,13 @@ spec:
       - name: nginx
         image: nginx:1.15
         imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: 100m
+            memory: 200M 
+          limits:
+            cpu: 500
+            memory: 500M
         env:
         - name: TZ
           value: "Asia/Shanghai"
