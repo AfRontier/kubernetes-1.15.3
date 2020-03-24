@@ -1,0 +1,17 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-demo
+spec:
+  tls:
+  - secretName: secret-demo
+    hosts:
+    - test.test.test
+  rules:
+  - host: test.test.test
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: svc-demo
+          servicePort: 80
