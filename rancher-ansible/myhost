@@ -1,0 +1,5 @@
+[test]
+ansible1
+ansible2
+[rke]
+ansible1
