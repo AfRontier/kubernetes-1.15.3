@@ -1,0 +1,112 @@
+---
+ - hosts: rancher
+   remote_user: root
+   tasks:    
+     - service:
+         name:  firewalld
+         state: stopped
+         enabled: no
+     - shell:
+         cmd: rm -rf /etc/yum.repos.d/* 
+     - name: Download centos-repo epel-repo docker-ce-repo
+       get_url:
+         url: http://mirrors.aliyun.com/repo/Centos-7.repo
+         dest: /etc/yum.repos.d/Centos-7.repo
+     - get_url:
+         url: http://mirrors.aliyun.com/repo/epel-7.repo
+         dest: /etc/yum.repos.d/epel-7.repo
+     - get_url:
+         url: http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+         dest: /etc/yum.repos.d/docker-ce.repo
+     - name: install packages
+       vars:
+         packages:
+         - vim
+         - httpd-tools
+         - wget
+         - docker-ce
+         - chrony
+         - sshpass
+       yum:
+         name: "{{ packages }}"
+         state: installed
+     #- replace:  #如果要更换docker路径 修改此处
+     #    path: /usr/lib/systemd/system/docker.service
+     #    regexp: 'dockerd$'
+     #    replace: 'dockerd --graph /mfs/lib/docker'
+     - lineinfile:
+         path: /usr/lib/systemd/system/docker.service
+         insertafter: 'ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock'
+         line: 'ExecStartPost=/usr/sbin/iptables -P FORWARD ACCEPT'
+     - copy:
+         src:  /root/chrony.conf
+         dest: /etc/chrony.conf
+         owner: root
+         group: root
+         mode:  '0644'
+     - service:
+         name:  docker
+         state: started 
+         enabled: yes
+     - copy:
+         src:  /root/ansible/daemon.json
+         dest: /etc/docker/daemon.json
+         owner: root
+         group: root
+         mode:  '0644'
+     - name: reload docker start docker chronyd
+       service:
+         name:  docker
+         state: reloaded
+     - service:
+         name:  docker
+         state: restarted
+     - service:
+         name:  chronyd
+         state: restarted
+         enabled: yes 
+     - copy:
+         src:  /root/ansible/mod.sh
+         dest: /root/mod.sh
+         owner: root
+         group: root
+         mode:  '0755'
+     - copy:
+         src:  /root/ansible/mod.txt
+         dest: /root/mod.txt
+         owner: root
+         group: root
+         mode:  '0644'
+    # - shell:
+    #     cmd: bash mod.sh
+    #     chdir: /root/
+     - copy:
+         src:  /root/ansible/k8s.conf
+         dest: /etc/sysctl.d/k8s.conf
+         owner: root
+         group: root
+         mode:  '0644'
+     - shell:
+         cmd: sysctl -p /etc/sysctl.d/k8s.conf
+     - name: Add rancher appending the group docker generate sshkey update password for rancher 
+       user:
+         name: rancher
+         shell: /bin/bash
+         groups: docker
+         append: yes
+       ignore_errors: yes
+     - user:
+         name: 'rancher'
+         update_password: always
+         password: '$6$C/G0aQPkIy3ZhJds$wl7wIjgTSB7cQp2GuA0SnaFpolIRbV9hjaxS4SLg/KaSdhocnk/VP.k770lGi1e16Sviv5U3d9PIxlewa9Igb.'
+     - user: 
+         name: rancher
+         generate_ssh_key: yes
+         ssh_key_bits: 2048
+         ssh_key_file: .ssh/id_rsa
+     - shell:
+         cmd: |
+           sshpass -p 123456 ssh-copy-id -p22 -i  ~/.ssh/id_rsa.pub rancher@rancher1 -o StrictHostKeyChecking=no
+           sshpass -p 123456 ssh-copy-id -p22 -i  ~/.ssh/id_rsa.pub rancher@rancher2 -o StrictHostKeyChecking=no
+           sshpass -p 123456 ssh-copy-id -p22 -i  ~/.ssh/id_rsa.pub rancher@rancher3 -o StrictHostKeyChecking=no
+           sshpass -p 123456 ssh-copy-id -p22 -i  ~/.ssh/id_rsa.pub rancher@rancher4 -o StrictHostKeyChecking=no
