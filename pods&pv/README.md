@@ -1,0 +1,1 @@
+这个deployment.yaml是一个解决单deployment的多pods数量，挂载pvc后各个pod的日志输出到不同目录的办法，最后会在pv的路径下有5个deploy-demo-xxxxxxxx的目录，分别有五个tomcat的日志
