@@ -21,10 +21,10 @@ spec:
         resources:
           requests:
             cpu: 100m
-            memory: 200M 
+            memory: 200Mi
           limits:
-            cpu: 500
-            memory: 500M
+            cpu: 500m
+            memory: 500Mi
         env:
         - name: TZ
           value: "Asia/Shanghai"
