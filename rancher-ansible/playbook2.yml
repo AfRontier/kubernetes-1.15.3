@@ -1,0 +1,38 @@
+---
+ - hosts: rke
+   remote_user: root
+   tasks:
+     - name: Download rke kubectl helm
+       get_url:
+         url: https://docs.rancher.cn/download/rke/v1.0.0-rke_linux-amd64
+         dest: /usr/sbin/rke
+         mode: '0755'
+     - get_url:
+         url: https://docs.rancher.cn/download/kubernetes/linux-amd64-v1.15.6-kubectl
+         dest: /usr/sbin/kubectl
+         mode: '0755'
+     - get_url:
+         url:  https://docs.rancher.cn/download/helm/helm-v3.0.1-linux-amd64.tar.gz
+         dest: /root/helm-v3.0.1-linux-amd64.tar.gz
+     - name: Unarchive a file that is already on the remote machine
+       unarchive:
+         src: /root/helm-v3.0.1-linux-amd64.tar.gz
+         dest: /root/
+         remote_src: yes
+     - shell:
+         cmd: mv linux-amd64/helm /usr/sbin
+         chdir: /root/
+     - copy:
+         src: /root/ansible/cluster.yml
+         dest: /home/rancher/cluster.yml
+         mode: '0644'
+         owner: rancher
+         group: rancher
+     - shell:
+         cmd: |
+           su - rancher
+           rke up
+     - shell:
+         cmd: |
+           echo "export KUBECONFIG=/home/rancher/kube_config_cluster.yml" >> /etc/profile
+           source /etc/profile
