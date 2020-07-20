@@ -15,10 +15,10 @@
       spec:
         containers:
         - name: demo
-          image: registry.cn-hangzhou.aliyuncs.com/elasticsearch/elasticsearch:7.2.0
+          image: xxxxxxxx:xxxx
           volumeMounts:
           - name: data
-            mountPath: /usr/share/elasticsearch/data
+            mountPath: /xxx/xxx/xxx
         volumeClaimTemplates:
         - metadata: data
           labels:
