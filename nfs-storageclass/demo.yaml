@@ -1,0 +1,33 @@
+  apiVersion: apps/v1
+  kind: StatefulSet
+  metadata:
+    name: demo
+  spec:
+    serviceName: xxx
+    replicas: x
+    selector:
+      matchLabels:
+        app: demo
+    template:
+      metadata:
+        labels:
+          app: demo
+      spec:
+        containers:
+        - name: demo
+          image: registry.cn-hangzhou.aliyuncs.com/elasticsearch/elasticsearch:7.2.0
+          volumeMounts:
+          - name: data
+            mountPath: /usr/share/elasticsearch/data
+        volumeClaimTemplates:
+        - metadata: data
+          labels:
+            app: demo
+          spec:
+            accessModes:
+            - ReadWriteOnce
+            storageClassName: nfs-storage-class
+            resources:
+              requests:
+                storage: 10Gi
+    
